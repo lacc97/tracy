@@ -20,6 +20,12 @@ pub fn build(b: *Build) void {
         "Build the profiler (requires system headers and libraries)",
     ) orelse false;
 
+    const strip_binary = b.option(
+        bool,
+        "strip",
+        "Strip output binaries of their debug symbols",
+    ) orelse false;
+
     const tracy_defines = defineOptions(b);
 
     const tracy_lib = b.addStaticLibrary(.{
@@ -56,6 +62,7 @@ pub fn build(b: *Build) void {
     capture_exe.addCSourceFiles(&zstd_sources, &base_c_flags);
     capture_exe.linkLibCpp();
     capture_exe.linkLibrary(capstone_lib);
+    if (strip_binary) capture_exe.strip = strip_binary;
     b.installArtifact(capture_exe);
 
     if (build_profiler) {
@@ -82,6 +89,7 @@ pub fn build(b: *Build) void {
         profiler_exe.linkSystemLibrary("wayland-egl");
         profiler_exe.linkSystemLibrary("xkbcommon");
         profiler_exe.linkLibrary(capstone_lib);
+        if (strip_binary) profiler_exe.strip = strip_binary;
         b.installArtifact(profiler_exe);
     }
 }
