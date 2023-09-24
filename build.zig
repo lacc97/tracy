@@ -46,11 +46,11 @@ pub fn build(b: *Build) void {
     capture_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
     capture_exe.defineCMacro("TRACY_NO_STATISTICS", null);
     capture_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
-    capture_exe.addCSourceFiles(&capture_sources, &common_flags);
-    capture_exe.addCSourceFiles(&common_sources, &common_flags);
-    capture_exe.addCSourceFiles(&server_sources, &common_flags);
+    capture_exe.addCSourceFiles(&capture_sources, &capture_cxx_flags);
+    capture_exe.addCSourceFiles(&common_sources, &capture_cxx_flags);
+    capture_exe.addCSourceFiles(&server_sources, &capture_cxx_flags);
+    capture_exe.addCSourceFiles(&zstd_sources, &capture_c_flags);
     capture_exe.linkLibCpp();
-    capture_exe.linkSystemLibrary("libzstd");
     capture_exe.linkLibrary(capstone_lib);
     b.installArtifact(capture_exe);
 }
@@ -112,9 +112,6 @@ const common_sources = [_][]const u8{
     "public/common/TracyStackFrames.cpp",
     "public/common/TracySystem.cpp",
 };
-const common_flags = [_][]const u8{
-    "-std=c++17",
-};
 
 const server_sources = [_][]const u8{
     "server/TracyMemory.cpp",
@@ -128,6 +125,45 @@ const server_sources = [_][]const u8{
 
 const capture_sources = [_][]const u8{
     "capture/src/capture.cpp",
+};
+const capture_c_flags = [_][]const u8{
+    "-std=c89",
+};
+const capture_cxx_flags = [_][]const u8{
+    "-std=c++17",
+};
+
+const zstd_sources = [_][]const u8{
+    "zstd/common/debug.c",
+    "zstd/common/entropy_common.c",
+    "zstd/common/error_private.c",
+    "zstd/common/fse_decompress.c",
+    "zstd/common/pool.c",
+    "zstd/common/threading.c",
+    "zstd/common/xxhash.c",
+    "zstd/common/zstd_common.c",
+    "zstd/compress/fse_compress.c",
+    "zstd/compress/hist.c",
+    "zstd/compress/huf_compress.c",
+    "zstd/compress/zstdmt_compress.c",
+    "zstd/compress/zstd_compress.c",
+    "zstd/compress/zstd_compress_literals.c",
+    "zstd/compress/zstd_compress_sequences.c",
+    "zstd/compress/zstd_compress_superblock.c",
+    "zstd/compress/zstd_double_fast.c",
+    "zstd/compress/zstd_fast.c",
+    "zstd/compress/zstd_lazy.c",
+    "zstd/compress/zstd_ldm.c",
+    "zstd/compress/zstd_opt.c",
+    "zstd/decompress/huf_decompress.c",
+    "zstd/decompress/zstd_ddict.c",
+    "zstd/decompress/zstd_decompress.c",
+    "zstd/decompress/zstd_decompress_block.c",
+    "zstd/dictBuilder/cover.c",
+    "zstd/dictBuilder/divsufsort.c",
+    "zstd/dictBuilder/fastcover.c",
+    "zstd/dictBuilder/zdict.c",
+    "zstd/decompress/huf_decompress_amd64.S",
 };
 
 fn getInstallRelativePath(b: *Build, other: *Build.Step.Compile, to: []const u8) Build.LazyPath {
