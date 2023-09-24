@@ -33,7 +33,6 @@ pub fn build(b: *Build) void {
         .target = target,
         .optimize = optimize,
     });
-    if (optimize != .Debug) tracy_lib.defineCMacro("NDEBUG", null);
     if (tracy_lib.isDynamicLibrary()) tracy_lib.defineCMacro("TRACY_EXPORTS", null);
     for (tracy_defines) |d| tracy_lib.defineCMacro(d, null);
     tracy_lib.addCSourceFile(.{
@@ -54,7 +53,7 @@ pub fn build(b: *Build) void {
         .target = target,
         .optimize = optimize,
     });
-    if (optimize != .Debug) capture_exe.defineCMacro("NDEBUG", null);
+    if (capture_exe.optimize != .Debug) capture_exe.defineCMacro("NDEBUG", null);
     capture_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
     capture_exe.defineCMacro("TRACY_NO_STATISTICS", null);
     capture_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
@@ -71,7 +70,7 @@ pub fn build(b: *Build) void {
             .target = target,
             .optimize = optimize,
         });
-        if (optimize != .Debug) profiler_exe.defineCMacro("NDEBUG", null);
+        if (profiler_exe.optimize != .Debug) profiler_exe.defineCMacro("NDEBUG", null);
         profiler_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
         profiler_exe.defineCMacro("IMGUI_ENABLE_FREETYPE", null);
         profiler_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));

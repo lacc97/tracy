@@ -69,44 +69,44 @@ pub const Ctx = if (enable) ___tracy_c_zone_context else struct {
 pub inline fn trace(comptime src: std.builtin.SourceLocation) Ctx {
     if (!enable) return .{};
 
+    const L = struct {
+        var l: ___tracy_source_location_data = undefined;
+    };
+
+    L.l = .{
+        .name = null,
+        .function = src.fn_name.ptr,
+        .file = src.file.ptr,
+        .line = src.line,
+        .color = 0,
+    };
+
     if (enable_callstack) {
-        return ___tracy_emit_zone_begin_callstack(&.{
-            .name = null,
-            .function = src.fn_name.ptr,
-            .file = src.file.ptr,
-            .line = src.line,
-            .color = 0,
-        }, callstack_depth, 1);
+        return ___tracy_emit_zone_begin_callstack(&L.l, callstack_depth, 1);
     } else {
-        return ___tracy_emit_zone_begin(&.{
-            .name = null,
-            .function = src.fn_name.ptr,
-            .file = src.file.ptr,
-            .line = src.line,
-            .color = 0,
-        }, 1);
+        return ___tracy_emit_zone_begin(&L.l, 1);
     }
 }
 
 pub inline fn traceNamed(comptime src: std.builtin.SourceLocation, comptime name: [:0]const u8) Ctx {
     if (!enable) return .{};
 
+    const L = struct {
+        var l: ___tracy_source_location_data = undefined;
+    };
+
+    L.l = .{
+        .name = name.ptr,
+        .function = src.fn_name.ptr,
+        .file = src.file.ptr,
+        .line = src.line,
+        .color = 0,
+    };
+
     if (enable_callstack) {
-        return ___tracy_emit_zone_begin_callstack(&.{
-            .name = name.ptr,
-            .function = src.fn_name.ptr,
-            .file = src.file.ptr,
-            .line = src.line,
-            .color = 0,
-        }, callstack_depth, 1);
+        return ___tracy_emit_zone_begin_callstack(&L.l, callstack_depth, 1);
     } else {
-        return ___tracy_emit_zone_begin(&.{
-            .name = name.ptr,
-            .function = src.fn_name.ptr,
-            .file = src.file.ptr,
-            .line = src.line,
-            .color = 0,
-        }, 1);
+        return ___tracy_emit_zone_begin(&L.l, 1);
     }
 }
 
