@@ -14,6 +14,12 @@ pub fn build(b: *Build) void {
     });
     const capstone_lib = capstone_dep.artifact("capstone");
 
+    const build_profiler = b.option(
+        bool,
+        "profiler",
+        "Build the profiler (requires system headers and libraries)",
+    ) orelse false;
+
     const tracy_defines = defineOptions(b);
 
     const tracy_lib = b.addStaticLibrary(.{
@@ -46,13 +52,38 @@ pub fn build(b: *Build) void {
     capture_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
     capture_exe.defineCMacro("TRACY_NO_STATISTICS", null);
     capture_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
-    capture_exe.addCSourceFiles(&capture_sources, &capture_cxx_flags);
-    capture_exe.addCSourceFiles(&common_sources, &capture_cxx_flags);
-    capture_exe.addCSourceFiles(&server_sources, &capture_cxx_flags);
-    capture_exe.addCSourceFiles(&zstd_sources, &capture_c_flags);
+    capture_exe.addCSourceFiles(&capture_sources, &base_cxx_flags);
+    capture_exe.addCSourceFiles(&zstd_sources, &base_c_flags);
     capture_exe.linkLibCpp();
     capture_exe.linkLibrary(capstone_lib);
     b.installArtifact(capture_exe);
+
+    if (build_profiler) {
+        const profiler_exe = b.addExecutable(.{
+            .name = "tracy-profiler",
+            .target = target,
+            .optimize = optimize,
+        });
+        if (optimize != .Debug) profiler_exe.defineCMacro("NDEBUG", null);
+        profiler_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
+        profiler_exe.defineCMacro("IMGUI_ENABLE_FREETYPE", null);
+        profiler_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
+        profiler_exe.addIncludePath(.{ .path = "imgui" });
+        profiler_exe.addCSourceFiles(&profiler_cxx_sources, &base_cxx_flags);
+        profiler_exe.addCSourceFiles(&profiler_c_sources, &base_c_flags);
+        profiler_exe.addCSourceFiles(&profiler_wayland_cxx_sources, &base_cxx_flags);
+        profiler_exe.addCSourceFiles(&profiler_wayland_c_sources, &base_c_flags);
+        profiler_exe.addCSourceFiles(&zstd_sources, &base_c_flags);
+        profiler_exe.linkLibCpp();
+        profiler_exe.linkSystemLibrary("dbus-1");
+        profiler_exe.linkSystemLibrary("egl");
+        profiler_exe.linkSystemLibrary("freetype2");
+        profiler_exe.linkSystemLibrary("wayland-cursor");
+        profiler_exe.linkSystemLibrary("wayland-egl");
+        profiler_exe.linkSystemLibrary("xkbcommon");
+        profiler_exe.linkLibrary(capstone_lib);
+        b.installArtifact(profiler_exe);
+    }
 }
 
 fn validateTarget(t: std.Target) void {
@@ -105,6 +136,13 @@ fn defineOptions(b: *Build) [][]const u8 {
     return defines.toOwnedSlice(b.allocator) catch @panic("OOM");
 }
 
+const base_c_flags = [_][]const u8{
+    "-std=c99",
+};
+const base_cxx_flags = [_][]const u8{
+    "-std=c++17",
+};
+
 const common_sources = [_][]const u8{
     "public/common/tracy_lz4.cpp",
     "public/common/tracy_lz4hc.cpp",
@@ -113,7 +151,9 @@ const common_sources = [_][]const u8{
     "public/common/TracySystem.cpp",
 };
 
-const server_sources = [_][]const u8{
+const capture_sources = common_sources ++ [_][]const u8{
+    "capture/src/capture.cpp",
+
     "server/TracyMemory.cpp",
     "server/TracyMmap.cpp",
     "server/TracyPrint.cpp",
@@ -123,14 +163,100 @@ const server_sources = [_][]const u8{
     "server/TracyWorker.cpp",
 };
 
-const capture_sources = [_][]const u8{
-    "capture/src/capture.cpp",
+const profiler_cxx_sources = common_sources ++ [_][]const u8{
+    "profiler/src/ConnectionHistory.cpp",
+    "profiler/src/Filters.cpp",
+    "profiler/src/Fonts.cpp",
+    "profiler/src/HttpRequest.cpp",
+    "profiler/src/ImGuiContext.cpp",
+    "profiler/src/imgui/imgui_impl_opengl3.cpp",
+    "profiler/src/IsElevated.cpp",
+    "profiler/src/main.cpp",
+    "profiler/src/ResolvService.cpp",
+    "profiler/src/RunQueue.cpp",
+    "profiler/src/WindowPosition.cpp",
+    "profiler/src/winmain.cpp",
+    "profiler/src/winmainArchDiscovery.cpp",
+
+    "server/TracyBadVersion.cpp",
+    "server/TracyColor.cpp",
+    "server/TracyEventDebug.cpp",
+    "server/TracyFileselector.cpp",
+    "server/TracyFilesystem.cpp",
+    "server/TracyImGui.cpp",
+    "server/TracyMemory.cpp",
+    "server/TracyMicroArchitecture.cpp",
+    "server/TracyMmap.cpp",
+    "server/TracyMouse.cpp",
+    "server/TracyPrint.cpp",
+    "server/TracyProtoHistory.cpp",
+    "server/TracySourceContents.cpp",
+    "server/TracySourceTokenizer.cpp",
+    "server/TracySourceView.cpp",
+    "server/TracyStorage.cpp",
+    "server/TracyTaskDispatch.cpp",
+    "server/TracyTexture.cpp",
+    "server/TracyTextureCompression.cpp",
+    "server/TracyThreadCompress.cpp",
+    "server/TracyTimelineController.cpp",
+    "server/TracyTimelineItem.cpp",
+    "server/TracyTimelineItemCpuData.cpp",
+    "server/TracyTimelineItemGpu.cpp",
+    "server/TracyTimelineItemPlot.cpp",
+    "server/TracyTimelineItemThread.cpp",
+    "server/TracyUserData.cpp",
+    "server/TracyUtility.cpp",
+    "server/TracyView_Annotations.cpp",
+    "server/TracyView_Callstack.cpp",
+    "server/TracyView_Compare.cpp",
+    "server/TracyView_ConnectionState.cpp",
+    "server/TracyView_ContextSwitch.cpp",
+    "server/TracyView_CpuData.cpp",
+    "server/TracyView_FindZone.cpp",
+    "server/TracyView_FrameOverview.cpp",
+    "server/TracyView_FrameTimeline.cpp",
+    "server/TracyView_FrameTree.cpp",
+    "server/TracyView_GpuTimeline.cpp",
+    "server/TracyView_Locks.cpp",
+    "server/TracyView_Memory.cpp",
+    "server/TracyView_Messages.cpp",
+    "server/TracyView_Navigation.cpp",
+    "server/TracyView_NotificationArea.cpp",
+    "server/TracyView_Options.cpp",
+    "server/TracyView_Playback.cpp",
+    "server/TracyView_Plots.cpp",
+    "server/TracyView_Ranges.cpp",
+    "server/TracyView_Samples.cpp",
+    "server/TracyView_Statistics.cpp",
+    "server/TracyView_Timeline.cpp",
+    "server/TracyView_TraceInfo.cpp",
+    "server/TracyView_Utility.cpp",
+    "server/TracyView_ZoneInfo.cpp",
+    "server/TracyView_ZoneTimeline.cpp",
+    "server/TracyView.cpp",
+    "server/TracyWeb.cpp",
+    "server/TracyWorker.cpp",
+
+    "imgui/imgui.cpp",
+    "imgui/imgui_demo.cpp",
+    "imgui/imgui_draw.cpp",
+    "imgui/imgui_tables.cpp",
+    "imgui/imgui_widgets.cpp",
+    "imgui/misc/freetype/imgui_freetype.cpp",
+
+    "nfd/nfd_portal.cpp",
 };
-const capture_c_flags = [_][]const u8{
-    "-std=c89",
+const profiler_c_sources = [_][]const u8{
+    "profiler/src/ini.c",
 };
-const capture_cxx_flags = [_][]const u8{
-    "-std=c++17",
+
+const profiler_wayland_cxx_sources = [_][]const u8{
+    "profiler/src/BackendWayland.cpp",
+};
+const profiler_wayland_c_sources = [_][]const u8{
+    "profiler/src/wayland/xdg-shell.c",
+    "profiler/src/wayland/xdg-activation.c",
+    "profiler/src/wayland/xdg-decoration.c",
 };
 
 const zstd_sources = [_][]const u8{
