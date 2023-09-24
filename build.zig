@@ -31,6 +31,12 @@ pub fn build(b: *Build) void {
     tracy_lib.linkLibCpp();
     b.installArtifact(tracy_lib);
 
+    const tracy_mod = b.addModule(
+        "tracy",
+        .{ .source_file = .{ .path = "zig/tracy.zig" } },
+    );
+    _ = tracy_mod;
+
     const capture_exe = b.addExecutable(.{
         .name = "tracy-capture",
         .target = target,
