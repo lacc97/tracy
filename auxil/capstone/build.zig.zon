@@ -1,0 +1,10 @@
+.{
+    .name = "capstone",
+    .version = "5.0.1",
+    .paths = .{
+        "upstream/*.c",
+        "upstream/*.h",
+        "upstream/arch",
+    },
+    .dependencies = .{},
+}

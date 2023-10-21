@@ -1,0 +1,3 @@
+[submodule "auxil/capstone/upstream"]
+	path = auxil/capstone/upstream
+	url = https://github.com/capstone-engine/capstone.git

@@ -57,8 +57,8 @@ pub fn build(b: *Build) void {
     capture_exe.defineCMacro("NO_PARALLEL_SORT", null); // TODO: figure out how to enable tbb in libc++
     capture_exe.defineCMacro("TRACY_NO_STATISTICS", null);
     capture_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
-    capture_exe.addCSourceFiles(&capture_sources, &base_cxx_flags);
-    capture_exe.addCSourceFiles(&zstd_sources, &base_c_flags);
+    capture_exe.addCSourceFiles(.{ .files = &capture_sources, .flags = &base_cxx_flags });
+    capture_exe.addCSourceFiles(.{ .files = &zstd_sources, .flags = &base_c_flags });
     capture_exe.linkLibCpp();
     capture_exe.linkLibrary(capstone_lib);
     if (strip_binary) capture_exe.strip = strip_binary;
@@ -75,11 +75,11 @@ pub fn build(b: *Build) void {
         profiler_exe.defineCMacro("IMGUI_ENABLE_FREETYPE", null);
         profiler_exe.addIncludePath(getInstallRelativePath(b, capstone_lib, "include/capstone"));
         profiler_exe.addIncludePath(.{ .path = "imgui" });
-        profiler_exe.addCSourceFiles(&profiler_cxx_sources, &base_cxx_flags);
-        profiler_exe.addCSourceFiles(&profiler_c_sources, &base_c_flags);
-        profiler_exe.addCSourceFiles(&profiler_wayland_cxx_sources, &base_cxx_flags);
-        profiler_exe.addCSourceFiles(&profiler_wayland_c_sources, &base_c_flags);
-        profiler_exe.addCSourceFiles(&zstd_sources, &base_c_flags);
+        profiler_exe.addCSourceFiles(.{ .files = &profiler_cxx_sources, .flags = &base_cxx_flags });
+        profiler_exe.addCSourceFiles(.{ .files = &profiler_c_sources, .flags = &base_c_flags });
+        profiler_exe.addCSourceFiles(.{ .files = &profiler_wayland_cxx_sources, .flags = &base_cxx_flags });
+        profiler_exe.addCSourceFiles(.{ .files = &profiler_wayland_c_sources, .flags = &base_c_flags });
+        profiler_exe.addCSourceFiles(.{ .files = &zstd_sources, .flags = &base_c_flags });
         profiler_exe.linkLibCpp();
         profiler_exe.linkSystemLibrary("dbus-1");
         profiler_exe.linkSystemLibrary("egl");

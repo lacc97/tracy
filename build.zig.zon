@@ -1,10 +1,16 @@
 .{
     .name = "tracy",
     .version = "0.9.2-git",
+    .paths = .{
+        "capture",
+        "imgui",
+        "profiler",
+        "public",
+        "server",
+        "zstd",
+        "zig",
+    },
     .dependencies = .{
-        .capstone = .{
-            .url = "https://github.com/lacc97/capstone/archive/3c32c398e886d0876aa2255560adc38cc59750b2.tar.gz",
-            .hash = "12206e65348ceeaddd0b6fb941265abd9602b894bfc62aea5917742e9d0fe82f947f",
-        },
+        .capstone = .{ .path = "auxil/capstone" },
     },
 }
