@@ -1,15 +1,7 @@
 .{
     .name = "tracy",
     .version = "0.9.2-git",
-    .paths = .{
-        "capture",
-        "imgui",
-        "profiler",
-        "public",
-        "server",
-        "zstd",
-        "zig",
-    },
+    .paths = .{""},
     .dependencies = .{
         .capstone = .{ .path = "auxil/capstone" },
     },
