@@ -27,9 +27,12 @@ pub fn build(b: *Build) void {
     ) orelse false;
 
     const tracy_defines = defineOptions(b);
+    const build_shared = b.option(bool, "tracy_shared_libs", "Builds Tracy as a shared object") orelse false;
 
-    const tracy_lib = b.addStaticLibrary(.{
+    const tracy_lib = Build.Step.Compile.create(b, .{
         .name = "tracy",
+        .kind = .lib,
+        .linkage = if (build_shared) .dynamic else .static,
         .target = target,
         .optimize = optimize,
     });
