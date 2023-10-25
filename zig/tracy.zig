@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const build_options = @import("build_options");
 
 pub const enable = if (builtin.is_test) false else if (@hasDecl(options_override, "enable")) options_override.enable else false;
 pub const enable_allocation = enable and (if (@hasDecl(options_override, "enable_allocation")) options_override.enable_allocation else false);
@@ -11,9 +10,6 @@ const options_override = if (@hasDecl(@import("root"), "tracy_options"))
     @import("root").tracy_options
 else
     struct {};
-
-// pub fn init() void {}
-// pub fn deinit() void {}
 
 const ___tracy_c_zone_context = extern struct {
     id: u32,
@@ -69,44 +65,40 @@ pub const Ctx = if (enable) ___tracy_c_zone_context else struct {
 pub inline fn trace(comptime src: std.builtin.SourceLocation) Ctx {
     if (!enable) return .{};
 
-    const L = struct {
-        var l: ___tracy_source_location_data = undefined;
-    };
-
-    L.l = .{
-        .name = null,
-        .function = src.fn_name.ptr,
-        .file = src.file.ptr,
-        .line = src.line,
-        .color = 0,
+    const global = struct {
+        const loc: ___tracy_source_location_data = .{
+            .name = null,
+            .function = src.fn_name.ptr,
+            .file = src.file.ptr,
+            .line = src.line,
+            .color = 0,
+        };
     };
 
     if (enable_callstack) {
-        return ___tracy_emit_zone_begin_callstack(&L.l, callstack_depth, 1);
+        return ___tracy_emit_zone_begin_callstack(&global.loc, callstack_depth, 1);
     } else {
-        return ___tracy_emit_zone_begin(&L.l, 1);
+        return ___tracy_emit_zone_begin(&global.loc, 1);
     }
 }
 
 pub inline fn traceNamed(comptime src: std.builtin.SourceLocation, comptime name: [:0]const u8) Ctx {
     if (!enable) return .{};
 
-    const L = struct {
-        var l: ___tracy_source_location_data = undefined;
-    };
-
-    L.l = .{
-        .name = name.ptr,
-        .function = src.fn_name.ptr,
-        .file = src.file.ptr,
-        .line = src.line,
-        .color = 0,
+    const global = struct {
+        const loc: ___tracy_source_location_data = .{
+            .name = name.ptr,
+            .function = src.fn_name.ptr,
+            .file = src.file.ptr,
+            .line = src.line,
+            .color = 0,
+        };
     };
 
     if (enable_callstack) {
-        return ___tracy_emit_zone_begin_callstack(&L.l, callstack_depth, 1);
+        return ___tracy_emit_zone_begin_callstack(&global.loc, callstack_depth, 1);
     } else {
-        return ___tracy_emit_zone_begin(&L.l, 1);
+        return ___tracy_emit_zone_begin(&global.loc, 1);
     }
 }
 
