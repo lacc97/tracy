@@ -43,6 +43,7 @@ pub fn build(b: *Build) void {
         .flags = &.{"-std=c++11"},
     });
     tracy_lib.linkLibCpp();
+    installTracyHeaders(b, tracy_lib);
     b.installArtifact(tracy_lib);
 
     const tracy_mod = b.addModule(
@@ -146,11 +147,52 @@ fn defineOptions(b: *Build) [][]const u8 {
     return defines.toOwnedSlice(b.allocator) catch @panic("OOM");
 }
 
+fn installTracyHeaders(b: *Build, lib: *Build.Step.Compile) void {
+    const headers_wf = b.addWriteFiles();
+
+    inline for (public_header_files) |h| {
+        const sed_cmd = b.addSystemCommand(&.{"sed"});
+        sed_cmd.addArgs(&.{ "-e", "s|#include \"../client|#include \"./client|" });
+        sed_cmd.addArgs(&.{ "-e", "s|#include \"../common|#include \"./common|" });
+        sed_cmd.addFileArg(.{ .path = "public/tracy/" ++ h });
+        _ = headers_wf.addCopyFile(sed_cmd.captureStdOut(), h);
+    }
+
+    lib.installHeadersDirectoryOptions(.{
+        .source_dir = .{ .path = "public/client" },
+        .install_dir = .header,
+        .install_subdir = "tracy/client",
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
+    lib.installHeadersDirectoryOptions(.{
+        .source_dir = .{ .path = "public/common" },
+        .install_dir = .header,
+        .install_subdir = "tracy/common",
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
+    lib.installHeadersDirectoryOptions(.{
+        .source_dir = headers_wf.getDirectory(),
+        .install_dir = .header,
+        .install_subdir = "tracy",
+    });
+}
+
 const base_c_flags = [_][]const u8{
     "-std=c99",
 };
 const base_cxx_flags = [_][]const u8{
     "-std=c++17",
+};
+
+const public_header_files = [_][]const u8{
+    "TracyC.h",
+    "TracyD3D11.hpp",
+    "TracyD3D12.hpp",
+    "Tracy.hpp",
+    "TracyLua.hpp",
+    "TracyOpenCL.hpp",
+    "TracyOpenGL.hpp",
+    "TracyVulkan.hpp",
 };
 
 const common_sources = [_][]const u8{
