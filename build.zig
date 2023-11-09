@@ -98,7 +98,7 @@ pub fn build(b: *Build) void {
 }
 
 fn validateTarget(t: std.Target) void {
-    if (t.cpu.arch.endian() != .Little) @panic("only supported on little endian architectures");
+    if (t.cpu.arch.endian() != .little) @panic("only supported on little endian architectures");
 }
 
 fn defineOptions(b: *Build) [][]const u8 {
